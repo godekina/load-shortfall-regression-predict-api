@@ -27,6 +27,7 @@ import pandas as pd
 import pickle
 import json
 
+
 def _preprocess_data(data):
     """Private helper function to preprocess data for model prediction.
 
@@ -56,14 +57,41 @@ def _preprocess_data(data):
     # The code below is for demonstration purposes only. You will not
     # receive marks for submitting this code in an unchanged state.
     # ---------------------------------------------------------------
+    # Your preprocessing steps here
+    df_train = feature_vector_df
+    df_train = df_train.drop(['Unnamed: 0'], axis=1)
+
+    # create a copy
+    df_train_copy = df_train.copy(deep=True)
+
+    # Replace the null values in Valencia_pressure with Madrid_pressure values on the same row.
+    df_train_copy['Valencia_pressure'].fillna(df_train_copy['Madrid_pressure'], inplace=True)
+
+    # Extracting year, month, and hour from the time column
+    df_train_copy['time'] = pd.to_datetime(df_train_copy['time'])
+    df_train_copy['year'] = df_train_copy['time'].dt.year
+    df_train_copy['month'] = df_train_copy['time'].dt.month
+    df_train_copy['Hours'] = df_train_copy['time'].dt.hour
+
+    # Drop unnecessary columns and fill missing values with 0
+    df_train_copy.drop(['time'], axis='columns', inplace=True)
+    df_train_copy.fillna(0, inplace=True)
+
+    features = ['Madrid_wind_speed', 'Valencia_wind_deg', 'Bilbao_rain_1h',
+                'Valencia_wind_speed', 'Seville_humidity',
+                'Madrid_humidity', 'Bilbao_clouds_all', 'Bilbao_wind_speed',
+                'Seville_clouds_all', 'Bilbao_wind_deg',
+                'Barcelona_wind_speed', 'Barcelona_wind_deg', 'Madrid_clouds_all', 'Seville_wind_speed',
+                'Barcelona_rain_1h', 'Seville_pressure', 'Bilbao_snow_3h']
 
     # ----------- Replace this code with your own preprocessing steps --------
-    predict_vector = feature_vector_df[['Madrid_wind_speed','Bilbao_rain_1h','Valencia_wind_speed']]
+    predict_vector = feature_vector_df[features]
     # ------------------------------------------------------------------------
 
     return predict_vector
 
-def load_model(path_to_model:str):
+
+def load_model(path_to_model: str):
     """Adapter function to load our pretrained model into memory.
 
     Parameters
@@ -85,6 +113,39 @@ def load_model(path_to_model:str):
 """ You may use this section (above the make_prediction function) of the python script to implement 
     any auxiliary functions required to process your model's artifacts.
 """
+
+
+def save_transformer(transformer, transformer_path):
+    """Save the preprocessing transformer to the specified path.
+
+    Parameters
+    ----------
+    transformer : Transformer object
+        The preprocessing transformer object.
+    transformer_path : str
+        The path to save the preprocessing transformer.
+    """
+    with open(transformer_path, 'wb') as file:
+        pickle.dump(transformer, file)
+
+
+def load_transformer(transformer_path):
+    """Load the preprocessing transformer from the specified path.
+
+    Parameters
+    ----------
+    transformer_path : str
+        The path to the saved preprocessing transformer.
+
+    Returns
+    -------
+    Transformer object
+        The loaded preprocessing transformer object.
+    """
+    with open(transformer_path, 'rb') as file:
+        transformer = pickle.load(file)
+    return transformer
+
 
 def make_prediction(data, model):
     """Prepare request data for model prediction.
