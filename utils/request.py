@@ -20,36 +20,36 @@
 # Import dependencies
 import requests
 import pandas as pd
-import numpy as np
 
-# Load data from file to send as an API POST request.
-# We prepare a DataFrame with the public test set + riders data
-# from the Kaggle challenge.
-test = pd.read_csv('./data/df_test.csv')
+# Load data from file to send as an API POST request
+test_data = pd.read_csv('./data/df_test.csv')
 
+# Convert the test data to JSON string
+feature_vector_json = test_data.iloc[1].to_json()
 
-# Convert our DataFrame to a JSON string.
-# This step is necessary in order to transmit our data via HTTP/S
-feature_vector_json = test.iloc[1].to_json()
-
-# Specify the URL at which the API will be hosted.
-# NOTE: When testing your instance of the API on a remote machine
-# replace the URL below with its public IP:
-
-# url = 'http://{public-ip-address-of-remote-machine}:5000/api_v0.1'
+# Specify the URL at which the API will be hosted
 url = 'http://127.0.0.1:5000/api_v0.1'
 
-# Perform the POST request.
-print(f"Sending POST request to web server API at: {url}")
-print("")
-print(f"Querying API with the following data: \n {test.iloc[1].to_list()}")
-print("")
-# Here `api_response` represents the response we get from our API
-api_response = requests.post(url, json=feature_vector_json)
+# Perform the POST request
+try:
+    print(f"Sending POST request to web server API at: {url}")
+    print(f"Querying API with the following data: \n {test_data.iloc[1].tolist()}")
+    api_response = requests.post(url, json=feature_vector_json)
 
-# Display the prediction result
-print("Received POST response:")
-print("*"*50)
-print(f"API prediction result: {api_response.json()[0]}")
-print(f"The response took: {api_response.elapsed.total_seconds()} seconds")
-print("*"*50)
+    # Check if the API response is successful (status code 200)
+    if api_response.status_code == 200:
+        # Try to parse the response as JSON
+        try:
+            prediction_result = api_response.json()
+            print("Received POST response:")
+            print("*" * 50)
+            print(f"API prediction result: {prediction_result}")
+            print(f"The response took: {api_response.elapsed.total_seconds()} seconds")
+            print("*" * 50)
+        except ValueError:
+            print("Error: Invalid JSON response from the API")
+    else:
+        print(f"Error: API request failed with status code {api_response.status_code}")
+except requests.exceptions.RequestException as e:
+    print(f"Error: Failed to connect to the API - {e}")
+
