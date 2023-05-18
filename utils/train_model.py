@@ -13,19 +13,47 @@
 import pandas as pd
 import pickle
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import StackingRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
+from sklearn.tree import DecisionTreeRegressor
+from xgboost import XGBRegressor
+from sklearn.svm import SVR
 
 # Fetch training data and preprocess for modeling
 train = pd.read_csv('./data/df_train.csv')
 
 y_train = train[['load_shortfall_3h']]
-X_train = train[['Madrid_wind_speed','Bilbao_rain_1h','Valencia_wind_speed']]
+X_train = train[['Madrid_wind_speed', 'Bilbao_rain_1h', 'Valencia_wind_speed']]
 
-# Fit model
-lm_regression = LinearRegression(normalize=True)
-print ("Training Model...")
-lm_regression.fit(X_train, y_train)
+# Define the base models
+random_forest = RandomForestRegressor()
+decision_tree = DecisionTreeRegressor()
+gradient_boosting = GradientBoostingRegressor()
+xgboost = XGBRegressor()
+adaboost = AdaBoostRegressor()
+svr = SVR()
+
+# Define the stacked ensemble model
+estimators = [
+    ('random_forest', random_forest),
+    ('decision_tree', decision_tree),
+    ('gradient_boosting', gradient_boosting),
+    ('xgboost', xgboost),
+    ('adaboost', adaboost),
+    ('svr', svr)
+]
+
+stacked_model = StackingRegressor(
+    estimators=estimators,
+    final_estimator=LinearRegression(normalize=True)
+)
+
+# Fit the stacked ensemble model
+print("Training Model...")
+stacked_model.fit(X_train, y_train)
 
 # Pickle model for use within our API
-save_path = '../assets/trained-models/load_shortfall_simple_lm_regression.pkl'
-print (f"Training completed. Saving model to: {save_path}")
-pickle.dump(lm_regression, open(save_path,'wb'))
+save_path = '../assets/trained-models/stacked_ensemble_regression.pkl'
+print(f"Training completed. Saving model to: {save_path}")
+pickle.dump(stacked_model, open(save_path, 'wb'))
+
