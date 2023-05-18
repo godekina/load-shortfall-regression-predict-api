@@ -140,38 +140,6 @@ def load_model(path_to_model: str):
 """
 
 
-def save_transformer(transformer, transformer_path):
-    """Save the preprocessing transformer to the specified path.
-
-    Parameters
-    ----------
-    transformer : Transformer object
-        The preprocessing transformer object.
-    transformer_path : str
-        The path to save the preprocessing transformer.
-    """
-    with open(transformer_path, 'wb') as file:
-        pickle.dump(transformer, file)
-
-
-def load_transformer(transformer_path):
-    """Load the preprocessing transformer from the specified path.
-
-    Parameters
-    ----------
-    transformer_path : str
-        The path to the saved preprocessing transformer.
-
-    Returns
-    -------
-    Transformer object
-        The loaded preprocessing transformer object.
-    """
-    with open(transformer_path, 'rb') as file:
-        transformer = pickle.load(file)
-    return transformer
-
-
 def make_prediction(data, model):
     """Prepare request data for model prediction.
 
