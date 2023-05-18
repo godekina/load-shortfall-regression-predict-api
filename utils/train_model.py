@@ -3,9 +3,10 @@
 
     Author: Explore Data Science Academy
 
-    Description: This script is responsible for training a simple linear
-    regression model which is used within the API for initial demonstration
-    purposes.
+    Description: TIn this updated code, we add the base models (RandomForestRegressor, DecisionTreeRegressor,
+    GradientBoostingRegressor, XGBRegressor, AdaBoostRegressor, and SVR) to the ensemble model.
+    We define the estimators list as a combination of these base models,
+    and the final estimator is set as a LinearRegression model..
 
 """
 
