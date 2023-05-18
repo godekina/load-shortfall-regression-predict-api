@@ -17,13 +17,14 @@
 
     Description: This file contains several functions used to abstract aspects
     of model interaction within the API. This includes loading a model from
-    file, data preprocessing, and model prediction.  
+    file, data preprocessing, and model prediction.
 
 """
 
 # Helper Dependencies
 import numpy as np
 import pandas as pd
+from preprocessing import generate_day_month_columns, encode_categorical_variables, convert_time_to_float
 import pickle
 import json
 
@@ -43,44 +44,49 @@ def _preprocess_data(data):
     Returns
     -------
     Pandas DataFrame : <class 'pandas.core.frame.DataFrame'>
-        The preprocessed data, ready to be used our model for prediction.
+        The preprocessed data, ready to be used by our model for prediction.
     """
     # Convert the json string to a python dictionary object
     feature_vector_dict = json.loads(data)
     # Load the dictionary as a Pandas DataFrame.
     feature_vector_df = pd.DataFrame.from_dict([feature_vector_dict])
 
-    # ---------------------------------------------------------------
-    # NOTE: You will need to swap the lines below for your own data
-    # preprocessing methods.
-    #
-    # The code below is for demonstration purposes only. You will not
-    # receive marks for submitting this code in an unchanged state.
-    # ---------------------------------------------------------------
     # Your preprocessing steps here
-    df_train = feature_vector_df
-    df_train = df_train.drop(['Unnamed: 0'], axis=1)
+    # ---------------------------------------------------------------
+    # Note: Modify the code below based on your specific preprocessing steps
+    # --------------------------------------------------------------
 
-    categorical_cols = ['Valencia_wind_deg', 'Seville_pressure']
-    df_train_encoded = pd.get_dummies(df_train, columns=categorical_cols)
+    # Drop unnecessary columns
+    # Check if 'Unnamed: 0' column exists and drop it if it does
+    if 'Unnamed: 0' in feature_vector_df.columns:
+        feature_vector_df.drop('Unnamed: 0', axis=1, inplace=True)
 
-    # create a copy
-    df_train_copy = df_train_encoded.copy(deep=True)
+        # Your preprocessing steps here
+        # ---------------------------------------------------------------
+        # Note: Modify the code below based on your specific preprocessing steps
+        # --------------------------------------------------------------
 
-    # Replace the null values in Valencia_pressure with Madrid_pressure values on the same row.
-    df_train_copy['Valencia_pressure'].fillna(df_train_copy['Madrid_pressure'], inplace=True)
+        # Replace missing values in 'Valencia_pressure' with 'Madrid_pressure' values on the same row
+    feature_vector_df['Valencia_pressure'] = feature_vector_df['Valencia_pressure'].fillna(
+        feature_vector_df['Valencia_pressure'].mode()[0])
 
-    # Extracting year, month, and hour from the time column
-    df_train_copy['time'] = pd.to_datetime(df_train_copy['time'])
-    df_train_copy['year'] = df_train_copy['time'].dt.year
-    df_train_copy['month'] = df_train_copy['time'].dt.month
-    df_train_copy['day'] = df_train_copy['time'].dt.day
-    df_train_copy['Hours'] = df_train_copy['time'].dt.hour
+    # Extract year, month, and hour from the time column
+    feature_vector_df['time'] = pd.to_datetime(feature_vector_df['time'])
+    feature_vector_df['date'] = feature_vector_df['time'].dt.date
+    feature_vector_df['time'] = feature_vector_df['time'].dt.time
+
+    feature_vector_df = generate_day_month_columns(feature_vector_df, 'date')
+    feature_vector_df = convert_time_to_float(feature_vector_df, 'time')
+
+    # Perform one-hot encoding on categorical columns
+    categorical_cols = ['Valencia_wind_deg', 'Seville_pressure', 'day_of_week', 'month']
+    feature_vector_encoded = pd.get_dummies(feature_vector_df, columns=categorical_cols)
 
     # Drop unnecessary columns and fill missing values with 0
-    df_train_copy.drop(['time'], axis='columns', inplace=True)
-    df_train_copy.fillna(0, inplace=True)
+    feature_vector_encoded.drop(['time'], axis='columns', inplace=True)
+    feature_vector_encoded.fillna(0, inplace=True)
 
+    # Define the features to be used for prediction
     features = ['Madrid_wind_speed', 'Bilbao_rain_1h',
                 'Valencia_wind_speed', 'Seville_humidity', 'Madrid_humidity',
                 'Bilbao_clouds_all', 'Bilbao_wind_speed', 'Seville_clouds_all',
@@ -88,11 +94,10 @@ def _preprocess_data(data):
                 'Madrid_clouds_all', 'Seville_wind_speed', 'Barcelona_rain_1h',
                 'Seville_rain_1h', 'Bilbao_snow_3h', 'Barcelona_pressure',
                 'Seville_rain_3h', 'Madrid_rain_1h', 'Barcelona_rain_3h',
-                'Valencia_snow_3h',
-                'Bilbao_pressure', 'Valencia_pressure', 'Madrid_pressure',
+                'Valencia_snow_3h', 'Bilbao_pressure', 'Valencia_pressure', 'Madrid_pressure',
                 'Valencia_temp', 'Seville_temp',
                 'Valencia_humidity', 'Barcelona_temp', 'Bilbao_temp',
-                'Madrid_temp', 'Hours', 'Valencia_wind_deg_level_10', 'Valencia_wind_deg_level_2',
+                'Madrid_temp', 'float_time', 'Valencia_wind_deg_level_10', 'Valencia_wind_deg_level_2',
                 'Valencia_wind_deg_level_3', 'Valencia_wind_deg_level_4',
                 'Valencia_wind_deg_level_5', 'Valencia_wind_deg_level_6',
                 'Valencia_wind_deg_level_7', 'Valencia_wind_deg_level_8',
@@ -107,12 +112,17 @@ def _preprocess_data(data):
                 'Seville_pressure_sp24', 'Seville_pressure_sp25',
                 'Seville_pressure_sp3', 'Seville_pressure_sp4', 'Seville_pressure_sp5',
                 'Seville_pressure_sp6', 'Seville_pressure_sp7', 'Seville_pressure_sp8',
-                'Seville_pressure_sp9', 'month', 'day']
+                'Seville_pressure_sp9', 'day_of_week_Monday', 'day_of_week_Saturday',
+                'day_of_week_Sunday', 'day_of_week_Thursday', 'day_of_week_Tuesday',
+                'day_of_week_Wednesday', 'month_August', 'month_December',
+                'month_February', 'month_January', 'month_July', 'month_June',
+                'month_March', 'month_May', 'month_November', 'month_October',
+                'month_September']
 
-    # ----------- Replace this code with your own preprocessing steps --------
-    predict_vector = feature_vector_df[features]
-    # ------------------------------------------------------------------------
+    # Select the features from the preprocessed data for prediction
+    predict_vector = feature_vector_encoded[features]
 
+    # Return the preprocessed data
     return predict_vector
 
 
