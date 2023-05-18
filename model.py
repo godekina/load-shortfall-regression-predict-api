@@ -66,9 +66,10 @@ def _preprocess_data(data):
         # Note: Modify the code below based on your specific preprocessing steps
         # --------------------------------------------------------------
 
-        # Replace missing values in 'Valencia_pressure' with 'Madrid_pressure' values on the same row
-    feature_vector_df['Valencia_pressure'] = feature_vector_df['Valencia_pressure'].fillna(
-        feature_vector_df['Valencia_pressure'].mode()[0])
+        # Replace missing values in 'Valencia_pressure' with mode values on the same row
+    feature_vector_df['Valencia_pressure'] = feature_vector_df['Valencia_pressure'].fillna(feature_vector_df[
+                                                                                               'Valencia_pressure'
+                                                                                           ].mode()[0])
 
     # Extract year, month, and hour from the time column
     feature_vector_df['time'] = pd.to_datetime(feature_vector_df['time'])
