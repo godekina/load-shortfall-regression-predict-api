@@ -25,6 +25,7 @@
 import numpy as np
 import pandas as pd
 from preprocessing import generate_day_month_columns, encode_categorical_variables, convert_time_to_float
+from sklearn.preprocessing import LabelEncoder
 import pickle
 import json
 
@@ -67,61 +68,51 @@ def _preprocess_data(data):
         # --------------------------------------------------------------
 
         # Replace missing values in 'Valencia_pressure' with mode values on the same row
-    feature_vector_df['Valencia_pressure'] = feature_vector_df['Valencia_pressure'].fillna(feature_vector_df[
-                                                                                               'Valencia_pressure'
-                                                                                           ].mode()[0])
+    feature_vector_df['Valencia_pressure'] = feature_vector_df['Valencia_pressure'].fillna(
+        feature_vector_df['Valencia_pressure'].median())
 
     # Extract year, month, and hour from the time column
     feature_vector_df['time'] = pd.to_datetime(feature_vector_df['time'])
     feature_vector_df['date'] = feature_vector_df['time'].dt.date
     feature_vector_df['time'] = feature_vector_df['time'].dt.time
 
-    feature_vector_df = generate_day_month_columns(feature_vector_df, 'date')
-    feature_vector_df = convert_time_to_float(feature_vector_df, 'time')
+    feature_vector_df_1 = generate_day_month_columns(feature_vector_df, 'date')
+    feature_vector_df_2 = convert_time_to_float(feature_vector_df_1, 'time')
 
     # Perform one-hot encoding on categorical columns
+    # engineer existing features
+
     categorical_cols = ['Valencia_wind_deg', 'Seville_pressure', 'day_of_week', 'month']
-    feature_vector_encoded = pd.get_dummies(feature_vector_df, columns=categorical_cols)
+
+    label_encoder = LabelEncoder()
+
+    for col in categorical_cols:
+        feature_vector_df_2[col] = label_encoder.fit_transform(feature_vector_df_2[col])
+
+    print(feature_vector_df_2.columns)
 
     # Drop unnecessary columns and fill missing values with 0
-    feature_vector_encoded.drop(['time'], axis='columns', inplace=True)
-    feature_vector_encoded.fillna(0, inplace=True)
+    feature_vector_df_2.drop(['time'], axis='columns', inplace=True)
+    feature_vector_df_2.fillna(0, inplace=True)
 
-    # Define the features to be used for prediction
-    features = ['Madrid_wind_speed', 'Bilbao_rain_1h',
-                'Valencia_wind_speed', 'Seville_humidity', 'Madrid_humidity',
-                'Bilbao_clouds_all', 'Bilbao_wind_speed', 'Seville_clouds_all',
-                'Bilbao_wind_deg', 'Barcelona_wind_speed', 'Barcelona_wind_deg',
-                'Madrid_clouds_all', 'Seville_wind_speed', 'Barcelona_rain_1h',
-                'Seville_rain_1h', 'Bilbao_snow_3h', 'Barcelona_pressure',
-                'Seville_rain_3h', 'Madrid_rain_1h', 'Barcelona_rain_3h',
-                'Valencia_snow_3h', 'Bilbao_pressure', 'Valencia_pressure', 'Madrid_pressure',
-                'Valencia_temp', 'Seville_temp',
-                'Valencia_humidity', 'Barcelona_temp', 'Bilbao_temp',
-                'Madrid_temp', 'float_time', 'Valencia_wind_deg_level_10', 'Valencia_wind_deg_level_2',
-                'Valencia_wind_deg_level_3', 'Valencia_wind_deg_level_4',
-                'Valencia_wind_deg_level_5', 'Valencia_wind_deg_level_6',
-                'Valencia_wind_deg_level_7', 'Valencia_wind_deg_level_8',
-                'Valencia_wind_deg_level_9', 'Seville_pressure_sp10',
-                'Seville_pressure_sp11', 'Seville_pressure_sp12',
-                'Seville_pressure_sp13', 'Seville_pressure_sp14',
-                'Seville_pressure_sp15', 'Seville_pressure_sp16',
-                'Seville_pressure_sp17', 'Seville_pressure_sp18',
-                'Seville_pressure_sp19', 'Seville_pressure_sp2',
-                'Seville_pressure_sp20', 'Seville_pressure_sp21',
-                'Seville_pressure_sp22', 'Seville_pressure_sp23',
-                'Seville_pressure_sp24', 'Seville_pressure_sp25',
-                'Seville_pressure_sp3', 'Seville_pressure_sp4', 'Seville_pressure_sp5',
-                'Seville_pressure_sp6', 'Seville_pressure_sp7', 'Seville_pressure_sp8',
-                'Seville_pressure_sp9', 'day_of_week_Monday', 'day_of_week_Saturday',
-                'day_of_week_Sunday', 'day_of_week_Thursday', 'day_of_week_Tuesday',
-                'day_of_week_Wednesday', 'month_August', 'month_December',
-                'month_February', 'month_January', 'month_July', 'month_June',
-                'month_March', 'month_May', 'month_November', 'month_October',
-                'month_September']
+    print('ok')
 
     # Select the features from the preprocessed data for prediction
-    predict_vector = feature_vector_encoded[features]
+    predict_vector = feature_vector_df_2[['Madrid_wind_speed', 'Valencia_wind_deg',
+                                          'Bilbao_rain_1h', 'Valencia_wind_speed', 'Seville_humidity',
+                                          'Madrid_humidity', 'Bilbao_clouds_all', 'Bilbao_wind_speed',
+                                          'Seville_clouds_all', 'Bilbao_wind_deg', 'Barcelona_wind_speed',
+                                          'Barcelona_wind_deg', 'Madrid_clouds_all', 'Seville_wind_speed',
+                                          'Barcelona_rain_1h', 'Seville_pressure', 'Seville_rain_1h',
+                                          'Bilbao_snow_3h', 'Barcelona_pressure', 'Seville_rain_3h',
+                                          'Madrid_rain_1h', 'Barcelona_rain_3h', 'Valencia_snow_3h', 'Bilbao_pressure',
+                                          'Valencia_pressure',
+                                          'Madrid_pressure', 'Valencia_temp', 'Seville_temp', 'Valencia_humidity',
+                                          'Barcelona_temp', 'Bilbao_temp',
+                                          'Madrid_temp',
+                                          'day_of_week', 'month', 'float_time']]
+
+    print(predict_vector.columns)
 
     # Return the preprocessed data
     return predict_vector
