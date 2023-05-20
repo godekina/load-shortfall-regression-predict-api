@@ -67,50 +67,46 @@ def _preprocess_data(data):
         # Note: Modify the code below based on your specific preprocessing steps
         # --------------------------------------------------------------
 
-        # Replace missing values in 'Valencia_pressure' with mode values on the same row
+    feature_vector_df['Valencia_wind_deg'] = feature_vector_df['Valencia_wind_deg'].str.extract('(\d+)')
+    feature_vector_df['Seville_pressure'] = feature_vector_df['Seville_pressure'].str.extract('(\d+)')
+
+    feature_vector_df['Valencia_wind_deg'] = feature_vector_df['Valencia_wind_deg'].astype(float)
+    feature_vector_df['Seville_pressure'] = feature_vector_df['Seville_pressure'].astype(float)
+
+    # Replace missing values in 'Valencia_pressure' with mode values on the same row
     feature_vector_df['Valencia_pressure'] = feature_vector_df['Valencia_pressure'].fillna(
         feature_vector_df['Valencia_pressure'].median())
 
     # Extract year, month, and hour from the time column
-    feature_vector_df['time'] = pd.to_datetime(feature_vector_df['time'])
-    feature_vector_df['date'] = feature_vector_df['time'].dt.date
-    feature_vector_df['time'] = feature_vector_df['time'].dt.time
+    feature_vector_df['Year'] = feature_vector_df['time'].astype('datetime64[ns]').dt.year
+    feature_vector_df['Month_of_year'] = feature_vector_df['time'].astype('datetime64[ns]').dt.month
+    feature_vector_df['Day_of_year'] = feature_vector_df['time'].astype('datetime64[ns]').dt.dayofyear
+    feature_vector_df['Day_of_month'] = feature_vector_df['time'].astype('datetime64[ns]').dt.day
+    feature_vector_df['Day_of_week'] = feature_vector_df['time'].astype('datetime64[ns]').dt.dayofweek
+    feature_vector_df['Hour_of_week'] = (feature_vector_df['time'].astype('datetime64[ns]').dt.dayofweek * 24 + 24) - (
+            24 - feature_vector_df['time'].astype('datetime64[ns]').dt.hour)
+    feature_vector_df['Hour_of_day'] = feature_vector_df['time'].astype('datetime64[ns]').dt.hour
 
-    feature_vector_df_1 = generate_day_month_columns(feature_vector_df, 'date')
-    feature_vector_df_2 = convert_time_to_float(feature_vector_df_1, 'time')
+    df = feature_vector_df.drop(columns=['Day_of_year', 'Hour_of_week', 'time'])
 
-    # Perform one-hot encoding on categorical columns
-    # engineer existing features
+    mean_value = df['Valencia_pressure'].mean()
 
-    categorical_cols = ['Valencia_wind_deg', 'Seville_pressure', 'day_of_week', 'month']
-
-    label_encoder = LabelEncoder()
-
-    for col in categorical_cols:
-        feature_vector_df_2[col] = label_encoder.fit_transform(feature_vector_df_2[col])
-
-    print(feature_vector_df_2.columns)
-
-    # Drop unnecessary columns and fill missing values with 0
-    feature_vector_df_2.drop(['time'], axis='columns', inplace=True)
-    feature_vector_df_2.fillna(0, inplace=True)
-
-    print('ok')
+    df['Valencia_pressure'].fillna(value=mean_value, inplace=True)
+    train_copy_df = df.fillna(0)
 
     # Select the features from the preprocessed data for prediction
-    predict_vector = feature_vector_df_2[['Madrid_wind_speed', 'Valencia_wind_deg',
-                                          'Bilbao_rain_1h', 'Valencia_wind_speed', 'Seville_humidity',
-                                          'Madrid_humidity', 'Bilbao_clouds_all', 'Bilbao_wind_speed',
-                                          'Seville_clouds_all', 'Bilbao_wind_deg', 'Barcelona_wind_speed',
-                                          'Barcelona_wind_deg', 'Madrid_clouds_all', 'Seville_wind_speed',
-                                          'Barcelona_rain_1h', 'Seville_pressure', 'Seville_rain_1h',
-                                          'Bilbao_snow_3h', 'Barcelona_pressure', 'Seville_rain_3h',
-                                          'Madrid_rain_1h', 'Barcelona_rain_3h', 'Valencia_snow_3h', 'Bilbao_pressure',
-                                          'Valencia_pressure',
-                                          'Madrid_pressure', 'Valencia_temp', 'Seville_temp', 'Valencia_humidity',
-                                          'Barcelona_temp', 'Bilbao_temp',
-                                          'Madrid_temp',
-                                          'day_of_week', 'month', 'float_time']]
+    predict_vector = train_copy_df[['Madrid_wind_speed', 'Valencia_wind_deg', 'Bilbao_rain_1h',
+                                    'Valencia_wind_speed', 'Seville_humidity', 'Madrid_humidity',
+                                    'Bilbao_clouds_all', 'Bilbao_wind_speed', 'Seville_clouds_all',
+                                    'Bilbao_wind_deg', 'Barcelona_wind_speed', 'Barcelona_wind_deg',
+                                    'Madrid_clouds_all', 'Seville_wind_speed', 'Barcelona_rain_1h',
+                                    'Seville_pressure', 'Seville_rain_1h', 'Bilbao_snow_3h',
+                                    'Barcelona_pressure', 'Seville_rain_3h', 'Madrid_rain_1h',
+                                    'Barcelona_rain_3h', 'Valencia_snow_3h', 'Madrid_weather_id',
+                                    'Barcelona_weather_id', 'Bilbao_pressure', 'Seville_weather_id',
+                                    'Valencia_pressure', 'Seville_temp_max', 'Bilbao_weather_id',
+                                    'Valencia_humidity', 'Year', 'Month_of_year', 'Day_of_month',
+                                    'Day_of_week', 'Hour_of_day']]
 
     print(predict_vector.columns)
 
