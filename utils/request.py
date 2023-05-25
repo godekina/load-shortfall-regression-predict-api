@@ -28,7 +28,7 @@ test_data = pd.read_csv('./data/df_test.csv')
 feature_vector_json = test_data.iloc[1].to_json()
 
 # Specify the URL at which the API will be hosted
-url = 'http://127.0.0.1:5000/api_v0.1'
+url = 'http://34.242.3.19:5000/api_v0.1'
 
 # Perform the POST request
 try:

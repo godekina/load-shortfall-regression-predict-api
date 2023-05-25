@@ -138,7 +138,7 @@ def load_model(path_to_model: str):
 """
 
 
-def make_prediction(data, model):
+def make_prediction(data, model1, model2):
     """Prepare request data for model prediction.
 
     Parameters
@@ -157,6 +157,7 @@ def make_prediction(data, model):
     # Data preprocessing.
     prep_data = _preprocess_data(data)
     # Perform prediction with model and preprocessed data.
-    prediction = model.predict(prep_data)
+    prediction1 = model1.predict(prep_data)
+    prediction2 = model2.predict(prep_data)
     # Format as list for output standardisation.
     return prediction[0].tolist()

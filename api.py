@@ -29,7 +29,9 @@ app = Flask(__name__)
 
 # Load our model into memory.
 # Please update this path to reflect your own trained model.
-static_model = load_model(
+static_model1 = load_model(
+    path_to_model='assets/trained-models/RF_regressor_model.pkl')
+static_model2 = load_model(
     path_to_model='assets/trained-models/RF_regressor_model.pkl')
 
 print('-' * 40)
@@ -51,7 +53,7 @@ def model_prediction():
     data = request.get_json(force=True)
     # We then preprocess our data, and use our pretrained model to make a
     # prediction.
-    output = make_prediction(data, static_model)
+    output = make_prediction(data, static_model1, static_model2)
     # We finally package this prediction as a JSON object to deliver a valid
     # response with our API.
     return jsonify(output)
